@@ -249,7 +249,7 @@ class Table(object):
         self._state_manager.set_process(t.get_pool(), t.get_id())
 
     def view(self, columns=None, row_pivots=None, column_pivots=None,
-             aggregates=None, sort=None, filter=None):
+             aggregates=None, sort=None, filter=None, computed_columns=None):
         ''' Create a new :class:`~perspective.View` from this
         :class:`~perspective.Table` via the supplied keyword arguments.
 
@@ -286,6 +286,7 @@ class Table(object):
             >>> {"a": [1]}
         '''
         self._state_manager.call_process(self._table.get_id())
+
         config = {}
         if columns is None:
             config["columns"] = self.columns()  # TODO: push into C++
@@ -301,6 +302,9 @@ class Table(object):
             config["sort"] = sort
         if filter is not None:
             config["filter"] = filter
+        if computed_columns is not None:
+            config["computed_columns"] = computed_columns
+
         view = View(self, **config)
         self._views.append(view._name)
         return view
