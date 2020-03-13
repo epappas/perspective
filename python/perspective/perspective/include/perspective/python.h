@@ -32,6 +32,7 @@
 #include <perspective/exports.h>
 #include <perspective/python/accessor.h>
 #include <perspective/python/base.h>
+#include <perspective/python/computed.h>
 #include <perspective/python/context.h>
 #include <perspective/python/fill.h>
 #include <perspective/python/serialization.h>
@@ -92,6 +93,7 @@ PYBIND11_MODULE(libbinding, m)
         .def("num_columns", &View<t_ctx0>::num_columns)
         .def("get_row_expanded", &View<t_ctx0>::get_row_expanded)
         .def("schema", &View<t_ctx0>::schema)
+        .def("computed_schema", &View<t_ctx0>::computed_schema)
         .def("column_names", &View<t_ctx0>::column_names)
         .def("column_paths", &View<t_ctx0>::column_paths)
         .def("_get_deltas_enabled", &View<t_ctx0>::_get_deltas_enabled)
@@ -117,6 +119,7 @@ PYBIND11_MODULE(libbinding, m)
         .def("collapse", &View<t_ctx1>::collapse)
         .def("set_depth", &View<t_ctx1>::set_depth)
         .def("schema", &View<t_ctx1>::schema)
+        .def("computed_schema", &View<t_ctx1>::computed_schema)
         .def("column_names", &View<t_ctx1>::column_names)
         .def("column_paths", &View<t_ctx1>::column_paths)
         .def("_get_deltas_enabled", &View<t_ctx1>::_get_deltas_enabled)
@@ -142,6 +145,7 @@ PYBIND11_MODULE(libbinding, m)
         .def("collapse", &View<t_ctx2>::collapse)
         .def("set_depth", &View<t_ctx2>::set_depth)
         .def("schema", &View<t_ctx2>::schema)
+        .def("computed_schema", &View<t_ctx2>::computed_schema)
         .def("column_names", &View<t_ctx2>::column_names)
         .def("column_paths", &View<t_ctx2>::column_paths)
         .def("_get_deltas_enabled", &View<t_ctx2>::_get_deltas_enabled)
@@ -373,6 +377,9 @@ PYBIND11_MODULE(libbinding, m)
     m.def("get_row_delta_zero", &get_row_delta_zero);
     m.def("get_row_delta_one", &get_row_delta_one);
     m.def("get_row_delta_two", &get_row_delta_two);
+    m.def("get_table_computed_schema", &get_table_computed_schema_py);
+    m.def("get_computation_input_types", &get_computation_input_types);
+    m.def("make_computations", &make_computations);
 }
 
 #endif

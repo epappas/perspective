@@ -128,6 +128,7 @@ Table::get_computed_schema(
             } else {
                 type = schema.get_dtype(input_column);
             }
+            std::cout << input_column << ": " << get_dtype_descr(type) << std::endl;
             input_types.push_back(type);
         }
 

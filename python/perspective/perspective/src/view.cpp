@@ -143,14 +143,16 @@ make_view_config(std::shared_ptr<t_schema> schema, t_val date_parser, t_val conf
         column_only = true;
     }
 
-    auto p_computed_columns = config.attr("get_computed_columns")().cast<std::vector<std::vector<t_val>>>();
+    // this needs to be a py_dict
+    auto p_computed_columns = config.attr("get_computed_columns")().cast<std::vector<t_val>>();
     std::vector<std::tuple<std::string, t_computed_function_name, std::vector<std::string>>> computed_columns;
 
     for (auto c : p_computed_columns) {
-        std::string computed_column_name = c.at(0).cast<std::string>();
+        py::dict computed_column = c.cast<py::dict>();
+        std::string computed_column_name = c["column"].cast<std::string>();
         t_computed_function_name computed_function_name = 
-            str_to_computed_function_name(c.at(1).cast<std::string>());
-        std::vector<std::string> input_columns = c.at(2).cast<std::vector<std::string>>();
+            str_to_computed_function_name(c["computed_function_name"].cast<std::string>());
+        std::vector<std::string> input_columns = c["inputs"].cast<std::vector<std::string>>();
 
         /**
          * Mutate the schema to add computed columns - the distinction 

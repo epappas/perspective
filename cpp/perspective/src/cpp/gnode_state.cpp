@@ -131,8 +131,10 @@ t_gstate::fill_master_table(const t_data_table* flattened) {
         {
             // Clone each column from flattened into `m_table`
             const std::string& column_name = master_schema.m_columns[idx];
-            master_table->set_column(
-                idx, flattened->get_const_column(column_name)->clone());
+            auto flattened_col = flattened->get_const_column_safe(column_name);
+
+            if (!flattened_col) continue;
+            master_table->set_column(idx, flattened_col->clone());
         }
 #ifdef PSP_PARALLEL_FOR
     );
@@ -218,10 +220,13 @@ t_gstate::update_master_table(const t_data_table* flattened) {
         {
             const std::string& column_name = master_schema.m_columns[idx];
             t_column* master_column = master_table->get_column(column_name).get();
-            const t_column* flattened_column = flattened->get_const_column(column_name).get();
+            auto flattened_column = flattened->get_const_column_safe(column_name);
+            if (!flattened_column) {
+                continue;
+            }
             update_master_column(
                 master_column,
-                flattened_column,
+                flattened_column.get(),
                 flattened_op_col,
                 master_table_indexes,
                 flattened->num_rows());
