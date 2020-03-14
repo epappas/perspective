@@ -16,11 +16,6 @@ SUPPRESS_WARNINGS_VC(4505)
 #include <perspective/sym_table.h>
 #include <tsl/hopscotch_set.h>
 
-#ifdef PSP_ENABLE_PYTHON
-#include <pybind11/pybind11.h>
-namespace py = pybind11;
-#endif
-
 namespace perspective {
 // TODO : move to delegated constructors in C++11
 
@@ -936,14 +931,5 @@ void
 t_column::borrow_vocabulary(const t_column& o) {
     m_vocab = const_cast<t_column&>(o).m_vocab;
 }
-
-#ifdef PSP_ENABLE_PYTHON
-py::array
-t_column::_as_numpy() {
-    if (is_vlen_dtype(m_dtype))
-        return m_data->_as_numpy(DTYPE_UINT64);
-    return m_data->_as_numpy(m_dtype);
-}
-#endif
 
 } // end namespace perspective
