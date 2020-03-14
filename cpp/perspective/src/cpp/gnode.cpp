@@ -322,9 +322,14 @@ t_gnode::_process_table() {
             const std::string& cname = _gstate_table_schema.m_columns[colidx];
             auto fcolumn = _process_state.m_flattened_data_table->get_column_safe(cname);
             if (!fcolumn) {
-                // Invalid name, so continue
+            // column is invalid, i.e. a computed column belonging to a
+            // deleted view
+            #ifdef PSP_PARALLEL_FOR
+                return;
+            #else
                 continue;
-            };
+            #endif
+            }
             auto scolumn = _process_state.m_state_data_table->get_column(cname).get();
             auto dcolumn = _process_state.m_delta_data_table->get_column(cname).get();
             auto pcolumn = _process_state.m_prev_data_table->get_column(cname).get();

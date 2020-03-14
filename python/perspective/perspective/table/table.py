@@ -336,7 +336,11 @@ class Table(object):
 
         config = {}
         if columns is None:
-            config["columns"] = self.columns()  # TODO: push into C++
+            config["columns"] = self.columns()
+            if computed_columns is not None:
+                # append all computed columns if columns are not specified
+                for col in computed_columns:
+                    config["columns"].append(col["column"])
         else:
             config["columns"] = columns
         if row_pivots is not None:

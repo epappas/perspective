@@ -271,6 +271,31 @@ module.exports = perspective => {
             table.delete();
         });
 
+        it("A view without computed columns should break when serializing after another view with a computed column is deleted.", async function() {
+            const table = perspective.table(common.int_float_data);
+            const view = table.view({
+                computed_columns: [
+                    {
+                        column: "int + float",
+                        computed_function_name: "+",
+                        inputs: ["w", "x"]
+                    }
+                ]
+            });
+
+            const result = await view.to_columns();
+            expect(result["int + float"]).toEqual([2.5, 4.5, 6.5, 8.5]);
+            view.delete();
+
+            const view2 = table.view();
+
+            const result2 = await view2.to_json();
+            expect(result2).toEqual(common.int_float_data);
+
+            view2.delete();
+            table.delete();
+        });
+
         it("When computed columns are repeated between views, column indices should grow linearly.", async function() {
             let computed = [
                 {
