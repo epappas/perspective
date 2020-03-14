@@ -40,7 +40,7 @@ namespace perspective {
  * For Emscripten WASM builds, the type is defined as `emscripten::val`, shadowed using our
  * `t_val` construct.
  *
- * For Python, the type is `py::object`.
+ * For Python, the type is `py::handle`.
  *
  * Templated functions in this namespace should be explicitly instantiated with
  * the correct object type for the binding language.

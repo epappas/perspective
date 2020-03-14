@@ -41,7 +41,7 @@ namespace numpy {
      */
     class PERSPECTIVE_BINDING_EXPORT NumpyLoader {
         public:
-            NumpyLoader(py::object accessor);
+            NumpyLoader(t_val accessor);
             ~NumpyLoader();
 
             /**
@@ -156,7 +156,7 @@ namespace numpy {
              * Defaults to false - is true when any array dtype is of int/float/bool.
              */
             bool m_has_numeric_dtype;
-            py::object m_accessor;
+            t_val m_accessor;
             std::vector<std::string> m_names;
             std::vector<t_dtype> m_types;
     };

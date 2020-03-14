@@ -16,6 +16,11 @@ SUPPRESS_WARNINGS_VC(4505)
 #include <perspective/sym_table.h>
 #include <tsl/hopscotch_set.h>
 
+#ifdef PSP_ENABLE_PYTHON
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
+#endif
+
 namespace perspective {
 // TODO : move to delegated constructors in C++11
 
@@ -303,6 +308,9 @@ t_column::push_back<t_tscalar>(t_tscalar elem) {
         case DTYPE_STR: {
             push_back(elem.get<const char*>(), elem.m_status);
         } break;
+        case DTYPE_OBJECT: {
+            push_back(elem.get<std::uint64_t>(), elem.m_status);
+        } break;
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
     }
     ++m_size;
@@ -415,6 +423,13 @@ t_column::get_scalar(t_uindex idx) const {
                 = m_data->get_nth<std::pair<double, double>>(idx);
             rv.set(pair->first / pair->second);
         } break;
+        case DTYPE_OBJECT: {
+            // set as uint64_t
+            rv.set(*(m_data->get_nth<std::uint64_t>(idx)));
+            // Maintain DTYPE info
+            rv.m_type = DTYPE_OBJECT;
+
+        } break;
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
     }
 
@@ -470,6 +485,10 @@ t_column::clear(t_uindex idx, t_status status) {
             v.first = 0;
             v.second = 0;
             set_nth<std::pair<std::uint64_t, std::uint64_t>>(idx, v, status);
+        } break;
+        case DTYPE_OBJECT: {
+            void *v = nullptr;
+            set_nth<void *>(idx, v, status);
         } break;
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
     }
@@ -579,6 +598,7 @@ t_column::set_scalar(t_uindex idx, t_tscalar value) {
             std::int8_t tgt = value.get<std::int8_t>();
             set_nth<std::int8_t>(idx, tgt, value.m_status);
         } break;
+        case DTYPE_OBJECT:
         case DTYPE_UINT64: {
             std::uint64_t tgt = value.get<std::uint64_t>();
             set_nth<std::uint64_t>(idx, tgt, value.m_status);
@@ -804,6 +824,7 @@ t_column::copy(const t_column* other, const std::vector<t_uindex>& indices, t_ui
         case DTYPE_INT8: {
             copy_helper<std::int8_t>(other, indices, offset);
         } break;
+        case DTYPE_OBJECT:
         case DTYPE_UINT64: {
             copy_helper<std::uint64_t>(other, indices, offset);
         } break;

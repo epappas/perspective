@@ -313,6 +313,10 @@ t_gstate::update_master_column(
                 const char* s = flattened_column->get_nth<const char>(idx);
                 master_column->set_nth<const char*>(master_table_idx, s);
             } break;
+            case DTYPE_OBJECT: {
+                master_column->set_nth<void *>(
+                    master_table_idx, *(flattened_column->get_nth<void *>(idx)));
+            } break;
             default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
         }
     }
