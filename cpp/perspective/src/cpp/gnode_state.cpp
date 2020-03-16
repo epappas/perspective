@@ -315,9 +315,10 @@ t_gstate::update_master_column(
             } break;
             case DTYPE_OBJECT: {
                 //inform object
+                master_column->notify_object_cleared(master_table_idx);
                 master_column->set_nth<std::uint64_t>(
                     master_table_idx, *(flattened_column->get_nth<std::uint64_t>(idx)));
-                master_column->notify_object_copied(master_table_idx);
+                flattened_column->notify_object_copied(idx);
             } break;
             default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
         }

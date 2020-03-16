@@ -394,8 +394,17 @@ t_gnode::_process_column(
                 pcolumn->set_valid(added_count, prev_valid);
 
                 ccolumn->set_nth<DATA_T>(added_count, cur_valid ? cur_value : prev_value);
-
                 ccolumn->set_valid(added_count, cur_valid ? cur_valid : prev_valid);
+
+                // if object type, notify that a copy is occurring
+                if(ccolumn->get_dtype() == DTYPE_OBJECT) {
+                    ccolumn->notify_object_copied(added_count);
+
+                    // if previous did not exist, increment again to
+                    // account for the extra `clear` that will occur
+                    if(!prev_existed)
+                        ccolumn->notify_object_copied(added_count);
+                }
 
                 tcolumn->set_nth<std::uint8_t>(idx, trans);
             } break;
@@ -409,6 +418,10 @@ t_gnode::_process_column(
 
                     ccolumn->set_nth<DATA_T>(added_count, prev_value);
                     ccolumn->set_valid(added_count, prev_valid);
+
+                    if(ccolumn->get_dtype() == DTYPE_OBJECT){
+                        ccolumn->notify_object_cleared(added_count);
+                    }
 
                     SUPPRESS_WARNINGS_VC(4146)
                     dcolumn->set_nth<DATA_T>(added_count, -prev_value);

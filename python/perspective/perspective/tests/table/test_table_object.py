@@ -7,6 +7,7 @@
 #
 import six
 import sys
+from random import randint
 from perspective.table import Table
 from datetime import date, datetime
 
@@ -225,11 +226,14 @@ class TestTableObjectsStore(object):
         # Count references
         # 1 for `t`, one for `data`, one for argument to sys.getrefcount, and one for the table
         assert sys.getrefcount(t) == 4
-        tbl.update([data])
-        assert tbl.size() == 2
 
-        # 2 copies in the table now
-        assert sys.getrefcount(t) == 5
+        count = randint(5, 10)
+        for c in range(count):
+            tbl.update([data])
+            # c+1 new copies, +1 for original
+            assert tbl.size() == (c+1) + 1
+            # c+1 copies in the table now, +1 for original and +3 for others (`t`, `data`, arg to getrefcount)
+            assert sys.getrefcount(t) == (c+1) + 4
 
     def test_object_referencecount_clear(self):
         t = CustomObjectStore(1)
@@ -248,4 +252,25 @@ class TestTableObjectsStore(object):
         assert sys.getrefcount(t) == 3
 
 
+    def test_object_referencecount_update_clear(self):
+        t = CustomObjectStore(1)
+        data = {"a": [t]}
+        tbl = Table(data)
+        assert tbl.schema() == {"a": object}
+        assert tbl.size() == 1
+        assert tbl.view().to_dict() == {"a": [t]}
 
+        # Count references
+        # 1 for `t`, one for `data`, one for argument to sys.getrefcount, and one for the table
+        assert sys.getrefcount(t) == 4
+
+        # do random number of updates
+        count = randint(5, 10)
+        for _ in range(count):
+            tbl.update([data])
+
+        tbl.clear()
+        assert tbl.size() == 0
+        assert tbl.view().to_dict() == {}
+        # 1 for `t`, one for `data`, one for argument to sys.getrefcount
+        assert sys.getrefcount(t) == 3

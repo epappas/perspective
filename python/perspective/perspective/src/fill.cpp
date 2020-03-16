@@ -324,8 +324,8 @@ _fill_col_numeric(t_data_accessor accessor, t_data_table& tbl,
                 std::uint64_t store = reinterpret_cast<std::uintptr_t>(item.ptr());
 
                 // Increment the reference count to account for internal storage of the raw pointer
-                py::print("incrementing_init ", store);
-                item.inc_ref(); // don't uncomment
+                // (don't actually do this as _process_column will handle it)
+                // item.inc_ref(); // don't uncomment
 
                 // Store the pointer a uint64
                 col->set_nth(i, store);

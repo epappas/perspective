@@ -796,13 +796,6 @@ t_column::clone() const {
 #ifdef PSP_COLUMN_VERIFY
     rval->verify();
 #endif
-
-    // notify objects of extra reference
-    if (m_dtype == DTYPE_OBJECT){
-        for (t_uindex idx = 0, loop_end = size(); idx < loop_end; ++idx) {
-            notify_object_copied(idx);
-        }
-    }
     return rval;
 }
 
@@ -828,14 +821,6 @@ t_column::clone(const t_mask& mask) const {
 #ifdef PSP_COLUMN_VERIFY
     rval->verify();
 #endif
-
-    // notify objects of extra reference
-    if (m_dtype == DTYPE_OBJECT){
-        for (t_uindex idx = 0, loop_end = mask.size(); idx < loop_end; ++idx) {
-            notify_object_copied(idx);
-        }
-    }
-
     return rval;
 }
 
@@ -896,11 +881,6 @@ t_column::copy(const t_column* other, const std::vector<t_uindex>& indices, t_ui
         } break;
         case DTYPE_OBJECT: {
             copy_helper<std::uint64_t>(other, indices, offset);
-            // notify objects of extra reference
-            t_uindex eidx = std::min(other->size(), static_cast<t_uindex>(indices.size()));
-            for (t_uindex idx = 0; idx < eidx; ++idx) {
-                notify_object_copied(offset + idx);
-            }
         } break;
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
     }

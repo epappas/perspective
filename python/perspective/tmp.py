@@ -53,8 +53,16 @@ tbl.update([data])
 assert tbl.view().to_dict() == {"a": [t, t, t]}
 assert tbl.size() == 3
 
-# 2 copies in the table now
+# 3 copies in the table now
 print(sys.getrefcount(t), " should be ", 6)   
+# assert sys.getrefcount(t) == 6
+
+tbl.update([data])
+assert tbl.view().to_dict() == {"a": [t, t, t, t]}
+assert tbl.size() == 4
+
+# 4 copies in the table now
+print(sys.getrefcount(t), " should be ", 7)   
 # assert sys.getrefcount(t) == 6
 
 tbl.clear()
