@@ -6,6 +6,7 @@
 # the Apache License 2.0.  The full license can be found in the LICENSE file.
 #
 import six
+import sys
 from perspective.table import Table
 from datetime import date, datetime
 
@@ -200,5 +201,51 @@ class TestTableObjectsStore(object):
         assert tbl.size() == 3
         assert tbl.view().to_dict() == {"a": [t, t2, t3]}
     
+
+    def test_object_referencecount(self):
+        t = CustomObjectStore(1)
+        data = {"a": [t]}
+        tbl = Table(data)
+        assert tbl.schema() == {"a": object}
+        assert tbl.size() == 1
+        assert tbl.view().to_dict() == {"a": [t]}
+
+        # Count references
+        # 1 for `t`, one for `data`, one for argument to sys.getrefcount, and one for the table
+        assert sys.getrefcount(t) == 4
+
+    def test_object_referencecount_update(self):
+        t = CustomObjectStore(1)
+        data = {"a": [t]}
+        tbl = Table(data)
+        assert tbl.schema() == {"a": object}
+        assert tbl.size() == 1
+        assert tbl.view().to_dict() == {"a": [t]}
+
+        # Count references
+        # 1 for `t`, one for `data`, one for argument to sys.getrefcount, and one for the table
+        assert sys.getrefcount(t) == 4
+        tbl.update([data])
+        assert tbl.size() == 2
+
+        # 2 copies in the table now
+        assert sys.getrefcount(t) == 5
+
+    def test_object_referencecount_clear(self):
+        t = CustomObjectStore(1)
+        data = {"a": [t]}
+        tbl = Table(data)
+        assert tbl.schema() == {"a": object}
+        assert tbl.size() == 1
+
+        # Count references
+        # 1 for `t`, one for `data`, one for argument to sys.getrefcount, and one for the table
+        assert sys.getrefcount(t) == 4
+
+        tbl.clear()
+        assert tbl.size() == 0
+        # 1 for `t`, one for `data`, one for argument to sys.getrefcount
+        assert sys.getrefcount(t) == 3
+
 
 

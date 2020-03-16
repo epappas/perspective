@@ -6,9 +6,8 @@
  * the Apache License 2.0.  The full license can be found in the LICENSE file.
  *
  */
-
-#ifdef PSP_ENABLE_PYTHON
 #pragma once
+#ifdef PSP_ENABLE_PYTHON
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <perspective/first.h>

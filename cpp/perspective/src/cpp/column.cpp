@@ -341,6 +341,23 @@ t_column::reserve(t_uindex size) {
         m_status->reserve(get_dtype_size(DTYPE_UINT8) * size);
 }
 
+//object storage, specialize only for std::uint64_t
+template <>
+void t_column::object_copied<std::uint64_t>(std::uint64_t ptr) const {}
+
+void t_column::notify_object_copied(std::uint64_t idx) const {
+    if (*get_nth_status(idx) == STATUS_VALID)
+        object_copied<PSP_OBJECT_TYPE>(*(get_nth<std::uint64_t>(idx)));
+}
+
+template <>
+void t_column::object_cleared<std::uint64_t>(std::uint64_t ptr) const {}
+
+void t_column::notify_object_cleared(std::uint64_t idx) const {
+    if (*get_nth_status(idx) == STATUS_VALID)
+        object_cleared<PSP_OBJECT_TYPE>(*(get_nth<std::uint64_t>(idx)));
+}
+
 t_lstore*
 t_column::_get_data_lstore() {
     return m_data.get();
@@ -421,9 +438,9 @@ t_column::get_scalar(t_uindex idx) const {
         case DTYPE_OBJECT: {
             // set as uint64_t
             rv.set(*(m_data->get_nth<std::uint64_t>(idx)));
+
             // Maintain DTYPE info
             rv.m_type = DTYPE_OBJECT;
-
         } break;
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
     }
@@ -454,26 +471,22 @@ t_column::clear(t_uindex idx, t_status status) {
         case DTYPE_FLOAT64:
         case DTYPE_UINT64:
         case DTYPE_INT64: {
-            std::uint64_t v = 0;
-            set_nth<std::uint64_t>(idx, v, status);
+            set_nth<std::uint64_t>(idx, 0, status);
         } break;
         case DTYPE_DATE:
         case DTYPE_FLOAT32:
         case DTYPE_UINT32:
         case DTYPE_INT32: {
-            std::uint32_t v = 0;
-            set_nth<std::uint32_t>(idx, v, status);
+            set_nth<std::uint32_t>(idx, 0, status);
         } break;
         case DTYPE_UINT16:
         case DTYPE_INT16: {
-            std::uint16_t v = 0;
-            set_nth<std::uint16_t>(idx, v, status);
+            set_nth<std::uint16_t>(idx, 0, status);
         } break;
         case DTYPE_BOOL:
         case DTYPE_UINT8:
         case DTYPE_INT8: {
-            std::uint8_t v = 0;
-            set_nth<std::uint8_t>(idx, v, status);
+            set_nth<std::uint8_t>(idx, 0, status);
         } break;
         case DTYPE_F64PAIR: {
             std::pair<std::uint64_t, std::uint64_t> v;
@@ -482,8 +495,8 @@ t_column::clear(t_uindex idx, t_status status) {
             set_nth<std::pair<std::uint64_t, std::uint64_t>>(idx, v, status);
         } break;
         case DTYPE_OBJECT: {
-            void *v = nullptr;
-            set_nth<void *>(idx, v, status);
+            notify_object_cleared(idx);
+            set_nth<std::uint64_t>(idx, 0, status);
         } break;
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
     }
@@ -593,7 +606,6 @@ t_column::set_scalar(t_uindex idx, t_tscalar value) {
             std::int8_t tgt = value.get<std::int8_t>();
             set_nth<std::int8_t>(idx, tgt, value.m_status);
         } break;
-        case DTYPE_OBJECT:
         case DTYPE_UINT64: {
             std::uint64_t tgt = value.get<std::uint64_t>();
             set_nth<std::uint64_t>(idx, tgt, value.m_status);
@@ -643,6 +655,10 @@ t_column::set_scalar(t_uindex idx, t_tscalar value) {
                 set_nth<const char*>(idx, empty.c_str(), value.m_status);
             }
         } break;
+        case DTYPE_OBJECT: {
+            std::uint64_t tgt = value.get<std::uint64_t>();
+            set_nth<std::uint64_t>(idx, tgt, value.m_status);
+        }
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
     }
 }
@@ -687,11 +703,24 @@ t_column::append(const t_column& other) {
         }
     }
 
+    if (m_dtype == DTYPE_OBJECT){
+        for (t_uindex idx = 0, loop_end = other.size(); idx < loop_end; ++idx) {
+            notify_object_copied(idx);
+        }
+    }
     COLUMN_CHECK_VALUES();
 }
 
 void
 t_column::clear() {
+    // notify object types
+    if (m_dtype == DTYPE_OBJECT){
+        for (t_uindex idx = 0, loop_end = size(); idx < loop_end; ++idx) {
+            notify_object_cleared(idx);
+        }
+    }
+
+    // clear out the data store
     m_data->set_size(0);
     if (m_dtype == DTYPE_STR)
         m_data->clear();
@@ -700,6 +729,7 @@ t_column::clear() {
     }
     m_size = 0;
 }
+
 
 void
 t_column::pprint() const {
@@ -766,6 +796,13 @@ t_column::clone() const {
 #ifdef PSP_COLUMN_VERIFY
     rval->verify();
 #endif
+
+    // notify objects of extra reference
+    if (m_dtype == DTYPE_OBJECT){
+        for (t_uindex idx = 0, loop_end = size(); idx < loop_end; ++idx) {
+            notify_object_copied(idx);
+        }
+    }
     return rval;
 }
 
@@ -791,6 +828,14 @@ t_column::clone(const t_mask& mask) const {
 #ifdef PSP_COLUMN_VERIFY
     rval->verify();
 #endif
+
+    // notify objects of extra reference
+    if (m_dtype == DTYPE_OBJECT){
+        for (t_uindex idx = 0, loop_end = mask.size(); idx < loop_end; ++idx) {
+            notify_object_copied(idx);
+        }
+    }
+
     return rval;
 }
 
@@ -819,7 +864,6 @@ t_column::copy(const t_column* other, const std::vector<t_uindex>& indices, t_ui
         case DTYPE_INT8: {
             copy_helper<std::int8_t>(other, indices, offset);
         } break;
-        case DTYPE_OBJECT:
         case DTYPE_UINT64: {
             copy_helper<std::uint64_t>(other, indices, offset);
         } break;
@@ -849,6 +893,14 @@ t_column::copy(const t_column* other, const std::vector<t_uindex>& indices, t_ui
         } break;
         case DTYPE_STR: {
             copy_helper<const char>(other, indices, offset);
+        } break;
+        case DTYPE_OBJECT: {
+            copy_helper<std::uint64_t>(other, indices, offset);
+            // notify objects of extra reference
+            t_uindex eidx = std::min(other->size(), static_cast<t_uindex>(indices.size()));
+            for (t_uindex idx = 0; idx < eidx; ++idx) {
+                notify_object_copied(offset + idx);
+            }
         } break;
         default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
     }

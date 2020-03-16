@@ -116,8 +116,8 @@ t_gstate::fill_master_table(const t_data_table* flattened) {
     const t_schema& flattened_schema = flattened->get_schema();
     const t_schema& master_schema = m_table->get_schema();
 
-    auto flattened_pkey_col = flattened->get_const_column("psp_pkey").get();
-    auto flattened_op_col = flattened->get_const_column("psp_op").get();
+    const t_column* flattened_pkey_col = flattened->get_const_column("psp_pkey").get();
+    const t_column* flattened_op_col = flattened->get_const_column("psp_op").get();
 
     t_uindex ncols = m_table->num_columns();
     auto master_table = m_table.get();
@@ -310,12 +310,14 @@ t_gstate::update_master_column(
                     master_table_idx, *(flattened_column->get_nth<std::uint32_t>(idx)));
             } break;
             case DTYPE_STR: {
-                const char* s = flattened_column->get_nth<const char>(idx);
-                master_column->set_nth<const char*>(master_table_idx, s);
+                master_column->set_nth<const char*>(
+                    master_table_idx, flattened_column->get_nth<const char>(idx));
             } break;
             case DTYPE_OBJECT: {
-                master_column->set_nth<void *>(
-                    master_table_idx, *(flattened_column->get_nth<void *>(idx)));
+                //inform object
+                master_column->set_nth<std::uint64_t>(
+                    master_table_idx, *(flattened_column->get_nth<std::uint64_t>(idx)));
+                master_column->notify_object_copied(master_table_idx);
             } break;
             default: { PSP_COMPLAIN_AND_ABORT("Unexpected type"); }
         }

@@ -236,10 +236,8 @@ class _PerspectiveAccessor(object):
                 # update float columns with either ints or floats
                 return float(val)
         elif dtype == t_dtype.DTYPE_OBJECT:
-            # store id as pointer
-            print(id(val))
-            return id(val)
-
+            # will extract the id from the object
+            pass
         return val
 
     def _get_numpy_column(self, name):

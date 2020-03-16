@@ -320,7 +320,15 @@ _fill_col_numeric(t_data_accessor accessor, t_data_table& tbl,
                 }
             } break;
             case DTYPE_OBJECT: {
-                col->set_nth(i, item.cast<std::uint64_t>());
+                // Store pointer as uint64 (in 32-bit will promote to 64bits, should be ok)
+                std::uint64_t store = reinterpret_cast<std::uintptr_t>(item.ptr());
+
+                // Increment the reference count to account for internal storage of the raw pointer
+                py::print("incrementing_init ", store);
+                item.inc_ref(); // don't uncomment
+
+                // Store the pointer a uint64
+                col->set_nth(i, store);
             } break;
             default:
                 break;
